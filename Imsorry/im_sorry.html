@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>I'm Sorry 💕</title>
+<style>
+  :root{
+    --bg-dark:#12081a;
+    --bg-dark2:#1c0e26;
+    --pink:#ff5c8a;
+    --pink-soft:#ffb3c6;
+    --gold:#ffd166;
+    --white:#fff8f9;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{
+    height:100%;
+    font-family:'Georgia', 'Segoe UI', serif;
+    background:radial-gradient(circle at 50% 20%, var(--bg-dark2), var(--bg-dark) 70%);
+    color:var(--white);
+    overflow-x:hidden;
+  }
+  #hearts-canvas{position:fixed; inset:0; width:100%; height:100%; z-index:0; pointer-events:none;}
+
+  /* Loading */
+  #loading{
+    position:fixed; inset:0; z-index:100; background:var(--bg-dark);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    transition:opacity .8s ease, visibility .8s ease;
+  }
+  #loading .heart-loader{
+    width:60px;height:60px;background:var(--pink);transform:rotate(45deg);
+    position:relative;animation:pulse 1s infinite ease-in-out;margin-bottom:24px;
+  }
+  #loading .heart-loader:before,#loading .heart-loader:after{
+    content:"";width:60px;height:60px;background:var(--pink);border-radius:50%;position:absolute;
+  }
+  #loading .heart-loader:before{top:-30px;left:0;}
+  #loading .heart-loader:after{left:-30px;top:0;}
+  @keyframes pulse{0%,100%{transform:rotate(45deg) scale(1);}50%{transform:rotate(45deg) scale(0.85);}}
+  #loading p{letter-spacing:3px;font-size:.9rem;color:var(--pink-soft);text-transform:uppercase;}
+  #loading.hide{opacity:0;visibility:hidden;}
+
+  /* Envelope */
+  #envelope-screen{
+    position:fixed; inset:0; z-index:90;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:20px;
+    transition:opacity .8s ease, visibility .8s ease;
+  }
+  #envelope-screen.hide{opacity:0;visibility:hidden;pointer-events:none;}
+  #envelope-screen h1{font-size:clamp(1.4rem,4vw,2rem);color:var(--pink-soft);margin-bottom:36px;font-weight:400;}
+  .envelope{width:220px;height:150px;position:relative;cursor:pointer;filter:drop-shadow(0 10px 30px rgba(255,92,138,.35));}
+  .envelope .back{position:absolute;inset:0;background:linear-gradient(135deg,#ffe1e9,#ffc4d6);border-radius:6px;}
+  .envelope .flap{
+    position:absolute;top:0;left:0;width:100%;height:100%;
+    background:linear-gradient(135deg,#ff8fab,#ff5c8a);
+    clip-path:polygon(0 0,50% 55%,100% 0);
+    transform-origin:top;transition:transform .6s ease;border-radius:6px 6px 0 0;z-index:3;
+  }
+  .envelope .letter{
+    position:absolute;bottom:6px;left:10%;width:80%;height:70%;background:var(--white);
+    border-radius:4px;z-index:2;transition:transform .6s ease, bottom .6s ease;
+  }
+  .envelope .heart-seal{
+    position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    font-size:1.8rem;z-index:4;animation:seal-beat 1.4s infinite ease-in-out;
+  }
+  @keyframes seal-beat{0%,100%{transform:translate(-50%,-50%) scale(1);}50%{transform:translate(-50%,-50%) scale(1.15);}}
+  .envelope.open .flap{transform:rotateX(180deg);}
+  .envelope.open .letter{bottom:60px;transform:translateY(-40px);}
+  #envelope-screen .hint{margin-top:28px;font-size:.8rem;color:var(--pink-soft);opacity:.7;letter-spacing:1px;}
+
+  /* Main site */
+  #site{position:relative;z-index:1;opacity:0;transition:opacity 1s ease;}
+  #site.show{opacity:1;}
+  section{
+    min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:80px 20px;position:relative;text-align:center;
+  }
+
+  .hero h2{font-size:.9rem;letter-spacing:4px;color:var(--gold);text-transform:uppercase;margin-bottom:14px;}
+  .hero h1{
+    font-size:clamp(2.2rem,6vw,4rem);
+    background:linear-gradient(90deg,var(--pink-soft),var(--pink),var(--gold));
+    -webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:20px;
+  }
+  .hero p{max-width:520px;color:#e9d3da;line-height:1.7;font-size:1.05rem;}
+  .scroll-cue{margin-top:50px;font-size:1.6rem;color:var(--pink-soft);animation:bounce 1.6s infinite;}
+  @keyframes bounce{0%,100%{transform:translateY(0);}50%{transform:translateY(10px);}}
+
+  .section-title{font-size:clamp(1.6rem,4vw,2.4rem);color:var(--pink-soft);margin-bottom:12px;}
+  .section-sub{color:#c9a9b4;margin-bottom:50px;max-width:480px;font-size:.95rem;line-height:1.6;}
+
+  .letter-card{
+    max-width:600px;background:rgba(255,255,255,.04);border:1px solid rgba(255,179,198,.25);
+    border-radius:18px;padding:44px 36px;backdrop-filter:blur(6px);
+    text-align:left;line-height:1.9;color:#f2dde3;box-shadow:0 20px 50px rgba(0,0,0,.4);
+  }
+  .letter-card .sign{margin-top:24px;color:var(--pink);font-style:italic;text-align:right;}
+
+  .gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:22px;max-width:900px;width:100%;}
+  .gallery figure{
+    position:relative;border-radius:16px;overflow:hidden;aspect-ratio:3/4;background:#2a1420;
+    box-shadow:0 10px 30px rgba(0,0,0,.45);transform:rotate(var(--tilt,0deg));transition:transform .3s ease;
+  }
+  .gallery figure:nth-child(odd){--tilt:-3deg;}
+  .gallery figure:nth-child(even){--tilt:3deg;}
+  .gallery figure:hover{transform:rotate(0deg) scale(1.04);}
+  .gallery img{width:100%;height:100%;object-fit:cover;}
+  .gallery figcaption{
+    position:absolute;bottom:0;left:0;right:0;padding:14px;
+    background:linear-gradient(to top, rgba(0,0,0,.75), transparent);font-size:.85rem;color:var(--pink-soft);
+  }
+
+  .reasons-wrap{display:flex;gap:20px;flex-wrap:wrap;justify-content:center;max-width:960px;}
+  .flip-card{width:190px;height:230px;perspective:1000px;}
+  .flip-inner{
+    position:relative;width:100%;height:100%;text-align:center;
+    transition:transform .7s;transform-style:preserve-3d;cursor:pointer;
+  }
+  .flip-card.flipped .flip-inner{transform:rotateY(180deg);}
+  .flip-front,.flip-back{
+    position:absolute;inset:0;backface-visibility:hidden;border-radius:14px;
+    display:flex;align-items:center;justify-content:center;padding:18px;font-size:.95rem;line-height:1.5;
+  }
+  .flip-front{
+    background:linear-gradient(160deg,#3a1c2c,#25101c);border:1px solid rgba(255,179,198,.3);
+    color:var(--pink-soft);flex-direction:column;gap:10px;
+  }
+  .flip-front span{font-size:1.8rem;}
+  .flip-back{
+    background:linear-gradient(160deg,var(--pink),#ff8fab);color:#2a0e18;
+    transform:rotateY(180deg);font-weight:600;
+  }
+
+  .final h1{font-size:clamp(2rem,6vw,3.2rem);color:var(--pink);margin-bottom:16px;}
+  .final p{max-width:480px;color:#e9d3da;line-height:1.7;}
+  .heart-btn{
+    margin-top:34px;padding:14px 34px;border:none;border-radius:40px;
+    background:linear-gradient(90deg,var(--pink),#ff8fab);color:#fff;font-size:1rem;
+    cursor:pointer;letter-spacing:1px;box-shadow:0 10px 30px rgba(255,92,138,.4);transition:transform .25s ease;
+  }
+  .heart-btn:hover{transform:scale(1.06);}
+
+  #music-toggle{
+    position:fixed;bottom:22px;right:22px;z-index:80;width:52px;height:52px;border-radius:50%;
+    background:rgba(255,255,255,.08);border:1px solid rgba(255,179,198,.35);color:var(--pink-soft);
+    font-size:1.2rem;display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(6px);
+  }
+  #music-toggle.playing{animation:spin 3s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  @media (max-width:480px){
+    .letter-card{padding:28px 20px;}
+    .flip-card{width:150px;height:190px;}
+  }
+</style>
+</head>
+<body>
+
+<canvas id="hearts-canvas"></canvas>
+
+<div id="loading">
+  <div class="heart-loader"></div>
+  <p>loading something special...</p>
+</div>
+
+<div id="envelope-screen">
+  <h1>I made you something 💌</h1>
+  <div class="envelope" id="envelope">
+    <div class="letter"></div>
+    <div class="back"></div>
+    <div class="flap"></div>
+    <div class="heart-seal">❤️</div>
+  </div>
+  <p class="hint">tap the envelope to open</p>
+</div>
+
+<div id="site">
+
+  <section class="hero">
+    <h2>I'm sorry</h2>
+    <h1>I hate that I hurt you</h1>
+    <p>What I said wasn't fair to you, and you didn't deserve it. This is just a small way of showing you how much you actually mean to me. Please scroll down.</p>
+    <div class="scroll-cue">↓</div>
+  </section>
+
+  <section id="letter">
+    <h2 class="section-title">Something I Need to Say</h2>
+    <p class="section-sub">No excuses, just honesty.</p>
+    <div class="letter-card">
+      <p>My love,</p><br>
+      <p>I've been thinking about what I said, and I'm genuinely sorry. It was wrong, it hurt you, and you didn't deserve any of it. You mean so much more to me than those words showed.</p><br>
+      <p>I don't want to just say sorry, I want to show you that I mean it — through how I treat you from here on. Thank you for putting up with me, even when I don't deserve it.</p>
+      <p class="sign">— yours, always</p>
+    </div>
+  </section>
+
+  <section id="memories">
+    <h2 class="section-title">Why You Matter So Much</h2>
+    <p class="section-sub">A few moments that remind me how lucky I am (swap these for your own photos).</p>
+    <div class="gallery">
+      <figure><img src="https://placehold.co/400x520/2a1420/ffb3c6?text=Photo+1" alt=""><figcaption>That day out</figcaption></figure>
+      <figure><img src="https://placehold.co/400x520/2a1420/ffb3c6?text=Photo+2" alt=""><figcaption>Your smile</figcaption></figure>
+      <figure><img src="https://placehold.co/400x520/2a1420/ffb3c6?text=Photo+3" alt=""><figcaption>Us being silly</figcaption></figure>
+      <figure><img src="https://placehold.co/400x520/2a1420/ffb3c6?text=Photo+4" alt=""><figcaption>A good day</figcaption></figure>
+    </div>
+  </section>
+
+  <section id="reasons">
+    <h2 class="section-title">What I Promise You</h2>
+    <p class="section-sub">Tap a card to flip it.</p>
+    <div class="reasons-wrap" id="reasons-wrap"></div>
+  </section>
+
+  <section class="final">
+    <h1>I'm sorry, and I love you 💕</h1>
+    <p>Thank you for being patient with me. I'll do better — you deserve that much and more.</p>
+    <button class="heart-btn" id="burst-btn">Tap for hearts</button>
+  </section>
+
+</div>
+
+<button id="music-toggle" title="Toggle music">♪</button>
+
+<script>
+/* Floating hearts background */
+const canvas = document.getElementById('hearts-canvas');
+const ctx = canvas.getContext('2d');
+function resize(){canvas.width = window.innerWidth; canvas.height = window.innerHeight;}
+resize(); window.addEventListener('resize', resize);
+
+const colors = ['#ff5c8a','#ffb3c6','#ffd166'];
+class Heart{
+  constructor(){this.reset(true);}
+  reset(initial){
+    this.x = Math.random()*canvas.width;
+    this.y = initial ? Math.random()*canvas.height : canvas.height + 20;
+    this.size = 6 + Math.random()*14;
+    this.speed = .3 + Math.random()*.8;
+    this.drift = (Math.random()-.5)*.6;
+    this.color = colors[Math.floor(Math.random()*colors.length)];
+    this.opacity = .2 + Math.random()*.5;
+  }
+  update(){
+    this.y -= this.speed;
+    this.x += this.drift;
+    if(this.y < -20) this.reset(false);
+  }
+  draw(){
+    ctx.save();
+    ctx.globalAlpha = this.opacity;
+    ctx.translate(this.x, this.y);
+    ctx.scale(this.size/20, this.size/20);
+    ctx.fillStyle = this.color;
+    ctx.beginPath();
+    ctx.moveTo(0,4);
+    ctx.bezierCurveTo(-10,-8,-22,4,0,20);
+    ctx.bezierCurveTo(22,4,10,-8,0,4);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+const hearts = Array.from({length:40},()=>new Heart());
+function animate(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  hearts.forEach(h=>{h.update();h.draw();});
+  requestAnimationFrame(animate);
+}
+animate();
+
+/* Loading screen */
+window.addEventListener('load',()=>{
+  setTimeout(()=>{
+    document.getElementById('loading').classList.add('hide');
+  }, 1400);
+});
+
+/* Envelope open interaction */
+const envelope = document.getElementById('envelope');
+const envelopeScreen = document.getElementById('envelope-screen');
+const site = document.getElementById('site');
+envelope.addEventListener('click', ()=>{
+  envelope.classList.add('open');
+  setTimeout(()=>{
+    envelopeScreen.classList.add('hide');
+    site.classList.add('show');
+  }, 900);
+});
+
+/* Promises flip cards */
+const reasons = [
+  {icon:'🗣️', text:'To think before I speak'},
+  {icon:'👂', text:'To actually listen when you talk'},
+  {icon:'🙏', text:'To never talk to you like that again'},
+  {icon:'🤝', text:'To own my mistakes, not deflect them'},
+  {icon:'💗', text:'To treat you the way you deserve'},
+  {icon:'🌱', text:'To keep growing, for us'},
+];
+const wrap = document.getElementById('reasons-wrap');
+reasons.forEach((r,i)=>{
+  const card = document.createElement('div');
+  card.className='flip-card';
+  card.innerHTML = `
+    <div class="flip-inner">
+      <div class="flip-front"><span>${r.icon}</span>Promise #${i+1}</div>
+      <div class="flip-back">${r.text}</div>
+    </div>`;
+  card.addEventListener('click',()=>card.classList.toggle('flipped'));
+  wrap.appendChild(card);
+});
+
+/* Burst of hearts button */
+document.getElementById('burst-btn').addEventListener('click', (e)=>{
+  for(let i=0;i<24;i++){
+    const el = document.createElement('div');
+    el.textContent = '💗';
+    el.style.position='fixed';
+    el.style.left = (e.clientX)+'px';
+    el.style.top = (e.clientY)+'px';
+    el.style.fontSize = (14+Math.random()*18)+'px';
+    el.style.pointerEvents='none';
+    el.style.zIndex = 200;
+    el.style.transition = 'transform 1.2s ease, opacity 1.2s ease';
+    document.body.appendChild(el);
+    const angle = Math.random()*Math.PI*2;
+    const dist = 80+Math.random()*160;
+    requestAnimationFrame(()=>{
+      el.style.transform = `translate(${Math.cos(angle)*dist}px, ${Math.sin(angle)*dist - 80}px)`;
+      el.style.opacity = 0;
+    });
+    setTimeout(()=>el.remove(),1300);
+  }
+});
+
+/* Music toggle (optional) */
+// const audio = new Audio('your-song.mp3');
+// audio.loop = true;
+const musicBtn = document.getElementById('music-toggle');
+let playing = false;
+musicBtn.addEventListener('click', ()=>{
+  playing = !playing;
+  musicBtn.classList.toggle('playing', playing);
+  // if(playing){ audio.play(); } else { audio.pause(); }
+});
+</script>
+
+</body>
+</html>
